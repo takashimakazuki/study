@@ -17,7 +17,7 @@ runme_~: ELF 32-bit MSB executable, *unknown arch 0xdf* version 1 (SYSV), static
 
 stringsコマンドを叩くと...
 
-```JavaScript
+```JavaScript:sample
 This program uses special instructions.
 SETRSEED: (Opcode:0x16)
     RegA -> SEED
@@ -30,8 +30,9 @@ moxie-elf.c
 
 * とりあえずアーキテクチャはmoxieということがわかる。(readelf -h でもわかる)
     * objdumpではこのアーキテクチャはサポートされていない。
+    * [moxieの命令](http://moxielogic.org/blog/pages/architecture.html)
 
 * xorshift -> 乱数を作るアルゴリズム,ビットシフトとxorのみでシンプル
 
-
+**moxieの実行環境が必要**
 
