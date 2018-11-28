@@ -23,9 +23,9 @@ aarch64-linux-gnu-objdump
 
 または[このページ](https://onlinedisassembler.com/static/home/index.html)で逆アセンブルができる
 
-逆アセンブルしたものを読んで実行ファイルの動きを大まかに書く
+#### 実行ファイルの大まかな動き
 
-1. /dev/xorshift64に何かを書き込む
+1. /dev/xorshift64に何か固定値を書き込む(確認方法がわからない)
 2. decode関数でflagをデコード
 (flagとrandvalとxorshift乱数のxorをしている。)
 3. 文字を出力？
@@ -51,6 +51,8 @@ for i in range(32):
     
  print(randval_xor)
 ~~~
+
+xorshiftのシフト回数は実装によるが[wikipedia](https://ja.wikipedia.org/wiki/Xorshift)を真似した。(seed値もwikipediaのものを使った。)
 
 ###### decode関数内
 ~~~python
