@@ -32,7 +32,7 @@ aarch64-linux-gnu-objdump
 
 
 
-###### xorshift64(乱数を生成)
+##### xorshift64(乱数を生成)
 ~~~ python
 seed = 0x139408dcbbf7a44
 mask = 0xffffffffffffffff
@@ -54,10 +54,8 @@ for i in range(32):
 
 xorshiftのシフト回数は実装によるが[wikipedia](https://ja.wikipedia.org/wiki/Xorshift)を真似した。(seed値もwikipediaのものを使った。)
 
-###### decode関数内
+##### decode関数内
 ~~~python
-# flag is written in #1800~
-# randval is written in #1820~
 flag = "fe 75 88 a9 5a aa 10 52 9c 6a 67 f4 82 be 21 56 59 0b 97 32 21 46 93 ae 40 0d 2e 1f 83 43 40".split(" ")
 randval = "1d ab 1b 0f a7 d9 1a b0 61 7e b6 48 a4 56 cf 7e 49 05 fd 05 9c f9 54 45 fa 24 c6 1d 68 f2 46 ce".split(" ")
 result = ""
