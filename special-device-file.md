@@ -43,7 +43,9 @@ objdump: アーキテクチャ UNKNOWN! 用に逆アセンブルできません
 
 ## ここまでで分かったこと
 
-* /dev/xorshift64 というデバイスを使っている
+* runme_8a10b7425cea81a043db0fd352c82a370a2d3373は64ビットの実行ファイルである。
+
+* /dev/xorshift64 というデバイスを使っている? (予想)
 
 * objdump コマンドが使えない
 
@@ -69,9 +71,11 @@ aarch64で使われている命令たち(命令セット)のことをA64とい�
 
 ### 実行ファイルの大まかな動き
 
-1. メモリの0x1800 ~ 0x185fになんかよくわからん数値が1バイトずつ入っている。
+1. メモリの0x1800 ~ 0x185fによくわからん数値が1バイトずつ入っている。
 
-2. /dev/xorshift64に何か固定値を書き込む(確認方法がわからない)
+2. /dev/xorshift64に何か固定値を書き込む
+
+(確認方法がわからない)
 
 3. decode関数でflagをデコード
 
@@ -80,11 +84,16 @@ aarch64で使われている命令たち(命令セット)のことをA64とい�
 4. 文字を出力？
 
 
-### xorshift64(乱数を生成)
+
+### 実行ファイルで行っていることを同じようにpythonで書いてみる
+
+
+#### xorshift64(乱数を生成)
+
 ~~~ python
 seed = 0x139408dcbbf7a44
 mask = 0xffffffffffffffff
-randval_xor =[]
+randval_xorshift64 =[]
 
 def xorshift64():
     global seed
@@ -95,14 +104,26 @@ def xorshift64():
 
 for i in range(32):
     lastbyte = xorshift64() & 0xff
-    randval_xor.append(hex(lastbyte))
+    randval_xorshoft64.append(hex(lastbyte))
     
- print(randval_xor)
 ~~~
 
-xorshiftのシフト回数は実装によるが[wikipedia](https://ja.wikipedia.org/wiki/Xorshift)を真似した。(seed値もwikipediaのものを使った。)
+/dev/xorshiftで行われているであろう操作を名前から推測して、xorshiftという方法で乱数を生成しているのではないかと仮定。
 
-##### decode関数内
+なのでxorshiftを実装して32個の乱数を作っていく。この乱数は後でメモリの0x1800~に入っている32個の数値と0x1820~に入っている32個
+の数値とXORされることによって答えの文字列が得られる。
+
+pythonでは任意の桁数の演算ができてしまうので左シフトを繰り返していいると桁がだんだん大きくなっていく。しかし、実際の64ビットの
+計算機のなかで計算が行われるときには64ビットを超えた値は捨てられてしまう。このことを再現するために上のpythonのコードではシフト
+するたびに1が64個並んだ２進数とAND演算をすることによって下位64ビットだけを取り出している。
+
+xorshiftのシフト回数はここでは(左13,右7,左17)のようになっている。この組み合わせによって良い乱数になるかどうかが決まってくるらしい。
+
+シフト回数は実装によるが[wikipedia](https://ja.wikipedia.org/wiki/Xorshift)のxorshift64を真似した。(seed値もwikipediaのものを使った)
+
+
+
+#### decode関数内
 
 ~~~python
 flag = "fe 75 88 a9 5a aa 10 52 9c 6a 67 f4 82 be 21 56 59 0b 97 32 21 46 93 ae 40 0d 2e 1f 83 43 40".split(" ")
@@ -111,10 +132,20 @@ result = ""
 
 
 for i in range(len(flag)):
-    result += chr((int(randval_xor[i], 16) ^ int(randval[i], 16)) ^ int(flag[i], 16))
+    result += chr((int(randval_xorshoft64[i], 16) ^ int(randval[i], 16)) ^ int(flag[i], 16))
 
 print(result)
 
 ~~~
+
+* 0x1800~0x181fに入っている1バイトの数値32個 -> flag
+
+* 0x1820~0x183fに入っている1バイトの数値32個 -> randval
+
+　としている。この２つの数値と先にxorshiftで生成した乱数をXORして出来上がった新しい数値を文字に変換すると正解のflagが得られる。
+
+参考にしたWrite Up
+* https://garasubo.github.io/hexo/2018/10/31/seccon.html
+* http://ywkw1717.hatenablog.com/entry/2018/10/28/185936
 
 
