@@ -58,7 +58,7 @@ objdump: アーキテクチャ UNKNOWN! 用に逆アセンブルできません
 ## 実行ファイルのアセンブリを読みたい
 
 aarch64の逆アセンブルを行う方法を探したところ、
-[Online Disassembler](https://onlinedisassembler.com/static/home/index.html)で逆アセンブルができる
+[Online Disassembler](https://onlinedisassembler.com/static/home/index.html)で逆アセンブルができるようだった。
 
 aarch64で使われている命令を知るために[ARM公式のドキュメント](https://developer.arm.com/products/architecture/cpu-architecture/a-profile/exploration-tools)を見た。
 
@@ -77,12 +77,14 @@ aarch64で使われている命令たち(命令セット)のことをA64とい�
 |LDR|メモリ-> レジスタへ内容をコピー|
 
 レジスタは64ビット幅の汎用レジスタが31個ある。
+
 X0~X30で指定した場合は64ビット幅でアクセスする
+
 W0~W30で指定した場合は、レジスタX0~X30の下位32ビットにアクセスすることができる。
 
 
 
-### 実行ファイルの大まかな動き
+#### 実行ファイルの大まかな動き
 
 1. メモリの0x1800 ~ 0x185fによくわからん数値が1バイトずつ入っている。
 
@@ -97,15 +99,15 @@ W0~W30で指定した場合は、レジスタX0~X30の下位32ビットにアク
 4. 文字を出力？
 
 
-### main関数
+#### main関数
 ~~~
 .text:000016a4 <main>:
 .text:000016a4 ff c3 00 d1        sub	sp, sp, #0x30
 .text:000016a8 f3 53 00 a9        stp	x19, x20, [sp]
 .text:000016ac f5 7b 01 a9        stp	x21, x30, [sp,#16]
 .text:000016b0 80 48 8f d2        mov	x0, #0x7a44                	// #31300
-.text:000016b4 e0 77 b9 f2        movk	x0, #0xcbbf, lsl #16
-.text:000016b8 a0 11 c8 f2        movk	x0, #0x408d, lsl #32
+.text:000016b4 e0 77 b9 f2        movk	x0, #0xcbbf, lsl #16       // レジスタX0に0x139408dcbbf7a44を格納
+.text:000016b8 a0 11 c8 f2        movk	x0, #0x408d, lsl #32       // 
 .text:000016bc 20 27 e0 f2        movk	x0, #0x139, lsl #48
 .text:000016c0 f4 c3 00 91        add	x20, sp, #0x30
 .text:000016c4 80 8e 1f f8        str	x0, [x20,#-8]!
@@ -131,7 +133,7 @@ W0~W30で指定した場合は、レジスタX0~X30の下位32ビットにアク
 .text:00001714 e0 03 01 aa        mov	x0, x1
 .text:00001718 21 80 00 91        add	x1, x1, #0x20               //　#0x1820をレジスタx1に書き込み(randvalの先頭)
 .text:0000171c e2 03 13 2a        mov	w2, w19
-.text:00001720 c1 ff ff 97        bl	0x00001624 <decode>
+.text:00001720 c1 ff ff 97        bl	0x00001624 <decode>          // decode関数へ
 .text:00001724 e1 03 00 aa        mov	x1, x0
 .text:00001728 20 00 80 52        mov	w0, #0x1                   	// #1
 .text:0000172c 8b ff ff 97        bl	0x00001558 <puts>
@@ -146,7 +148,7 @@ W0~W30で指定した場合は、レジスタX0~X30の下位32ビットにアク
 ~~~
 
 
-### decode関数
+#### decode関数
 ~~~
 .text:00001624 <decode>:
 .text:00001624 ff 03 01 d1        sub	sp, sp, #0x40
@@ -154,8 +156,8 @@ W0~W30で指定した場合は、レジスタX0~X30の下位32ビットにアク
 .text:0000162c f5 5b 01 a9        stp	x21, x22, [sp,#16]
 .text:00001630 f7 63 02 a9        stp	x23, x24, [sp,#32]
 .text:00001634 fe 1b 00 f9        str	x30, [sp,#48]
-.text:00001638 f6 03 00 aa        mov	x22, x0
-.text:0000163c f7 03 01 aa        mov	x23, x1
+.text:00001638 f6 03 00 aa        mov	x22, x0                     // X22に0x1800を格納（数値列flagの先頭）
+.text:0000163c f7 03 01 aa        mov	x23, x1                     // X23に0x1820を格納(数値列randvalの先頭)
 .text:00001640 f8 03 02 2a        mov	w24, w2
 .text:00001644 00 00 40 39        ldrb	w0, [x0]
 .text:00001648 00 02 00 34        cbz	w0, 0x00001688
@@ -173,19 +175,19 @@ W0~W30で指定した場合は、レジスタX0~X30の下位32ビットにアク
 .text:00001678 83 7e 40 93        sxtw	x3, w20
 .text:0000167c d5 02 03 8b        add	x21, x22, x3
 .text:00001680 c0 6a 63 38        ldrb	w0, [x22,x3]
-.text:00001684 a0 fe ff 35                      cbnz	w0, 0x00001658
-.text:00001688 e0 03 16 aa                      mov	x0, x22
-.text:0000168c f3 53 40 a9                      ldp	x19, x20, [sp]
-.text:00001690 f5 5b 41 a9                      ldp	x21, x22, [sp,#16]
-.text:00001694 f7 63 42 a9                      ldp	x23, x24, [sp,#32]
-.text:00001698 fe 1b 40 f9                      ldr	x30, [sp,#48]
-.text:0000169c ff 03 01 91                      add	sp, sp, #0x40
-.text:000016a0 c0 03 5f d6                      ret
+.text:00001684 a0 fe ff 35        cbnz	w0, 0x00001658              // 0x1658番地へジャンプ
+.text:00001688 e0 03 16 aa        mov	x0, x22
+.text:0000168c f3 53 40 a9        ldp	x19, x20, [sp]
+.text:00001690 f5 5b 41 a9        ldp	x21, x22, [sp,#16]
+.text:00001694 f7 63 42 a9        ldp	x23, x24, [sp,#32]
+.text:00001698 fe 1b 40 f9        ldr	x30, [sp,#48]
+.text:0000169c ff 03 01 91        add	sp, sp, #0x40
+.text:000016a0 c0 03 5f d6        ret
 ~~~
 
 
 
-### 実行ファイルで行っていることを同じようにpythonで書いてみる
+## 実行ファイルで行っていることを同じようにpythonで書いてみる
 
 
 #### xorshift64(乱数を生成)
