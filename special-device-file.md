@@ -94,16 +94,13 @@ W0\~W30で指定した場合は、レジスタX0\~X30の下位32ビットにア�
 
 3. decode関数でflagをデコード
 
-(flagとrandvalとxorshift乱数のxorをしている。)
+(flagとrandvalとxorshift乱数のXORをしている。)
 
 4. 文字を出力？
 
-5. ただしスタックのベースを指定する位置がよくなさそう。(プログラム部分のど真ん中に指定されている)
+5. システムコールがうまく呼べていないのでそのまま実行したとしてもうまく行かなさそう。
 
-6. システムコールがうまく呼べていない
-
-ファイルを実行しながら解析していたり、うまく行っていない部分の命令を書き換えて動作をみているwrite upがあった。まだやり方がよくわかっていないので
-できるようになりたい。。。
+ファイルを実行しながら解析していたり、うまく行っていない部分の命令を書き換えて動作をみているwrite upがあった。まだやり方がよくわかっていないので出来るようになりたい。。。
 
 http://ywkw1717.hatenablog.com/entry/2018/10/28/185936
 
@@ -193,6 +190,197 @@ http://ywkw1717.hatenablog.com/entry/2018/10/28/185936
 .text:0000169c ff 03 01 91        add	sp, sp, #0x40
 .text:000016a0 c0 03 5f d6        ret
 ~~~
+
+#### get_rand_value関数
+
+~~~
+.text:00001600 <get_random_value>:
+.text:00001600 ff 83 00 d1                      sub	sp, sp, #0x20
+.text:00001604 fe 03 00 f9                      str	x30, [sp]
+.text:00001608 e1 63 00 91                      add	x1, sp, #0x18
+.text:0000160c 02 01 80 52                      mov	w2, #0x8                   	// #8
+.text:00001610 81 ff ff 97                      bl	0x00001414 <__read>           // /dev/xorshift64から読み出し?
+.text:00001614 e0 0f 40 f9                      ldr	x0, [sp,#24]                // x0に生成した乱数を書き込み
+.text:00001618 fe 03 40 f9                      ldr	x30, [sp]
+.text:0000161c ff 83 00 91                      add	sp, sp, #0x20
+.text:00001620 c0 03 5f d6                      ret
+~~~
+
+
+#### プログラムの始まり・うまく行っていない関数
+~~~
+0001400 <_start>:
+.text:	58000800 	                               ldr	x0, 1500 <_stack_addr>      //スタックポインタを0x1500番地に設定
+.text: 9100001f 	                               mov	sp, x0
+.text:	940000a7 	                               bl	16a4 <main>
+
+
+.text:0000140c <__exit>:
+.text:0000140c 00 00 20 d4                      brk	#0x0
+
+.text:00001410 <$x>:
+.text:00001410 c0 03 5f d6                      ret
+
+.text:00001414 <__read>:
+.text:00001414 c8 00 80 d2                      mov	x8, #0x6                   	// #6
+
+.text:00001418 <$d>:
+.text:00001418 00 00 5e d4                      hlt	#0xf000
+
+.text:0000141c <$x>:
+.text:0000141c c0 03 5f d6                      ret
+
+.text:00001420 <__write>:
+.text:00001420 a8 00 80 d2                      mov	x8, #0x5                   	// #5
+
+.text:00001424 <$d>:
+.text:00001424 00 00 5e d4                      hlt	#0xf000
+
+.text:00001428 <$x>:
+.text:00001428 c0 03 5f d6                      ret
+
+.text:0000142c <__open>:
+.text:0000142c 28 00 80 d2                      mov	x8, #0x1                   	// #1
+
+.text:00001430 <$d>:
+.text:00001430 00 00 5e d4                      hlt	#0xf000
+
+.text:00001434 <$x>:
+.text:00001434 c0 03 5f d6                      ret
+
+.text:00001438 <__close>:
+.text:00001438 48 00 80 d2                      mov	x8, #0x2                   	// #2
+
+.text:0000143c <$d>:
+.text:0000143c 00 00 5e d4                      hlt	#0xf000
+
+.text:00001440 <$x>:
+.text:00001440 c0 03 5f d6                      ret
+.text:00001444 1f 20 03 d5                      nop
+.text:00001448 1f 20 03 d5                      nop
+.text:0000144c 1f 20 03 d5                      nop
+.text:00001450 1f 20 03 d5                      nop
+.text:00001454 1f 20 03 d5                      nop
+.text:00001458 1f 20 03 d5                      nop
+.text:0000145c 1f 20 03 d5                      nop
+.text:00001460 1f 20 03 d5                      nop
+.text:00001464 1f 20 03 d5                      nop
+.text:00001468 1f 20 03 d5                      nop
+.text:0000146c 1f 20 03 d5                      nop
+.text:00001470 1f 20 03 d5                      nop
+.text:00001474 1f 20 03 d5                      nop
+.text:00001478 1f 20 03 d5                      nop
+.text:0000147c 1f 20 03 d5                      nop
+.text:00001480 1f 20 03 d5                      nop
+.text:00001484 1f 20 03 d5                      nop
+.text:00001488 1f 20 03 d5                      nop
+.text:0000148c 1f 20 03 d5                      nop
+.text:00001490 1f 20 03 d5                      nop
+.text:00001494 1f 20 03 d5                      nop
+.text:00001498 1f 20 03 d5                      nop
+.text:0000149c 1f 20 03 d5                      nop
+.text:000014a0 1f 20 03 d5                      nop
+.text:000014a4 1f 20 03 d5                      nop
+.text:000014a8 1f 20 03 d5                      nop
+.text:000014ac 1f 20 03 d5                      nop
+.text:000014b0 1f 20 03 d5                      nop
+.text:000014b4 1f 20 03 d5                      nop
+.text:000014b8 1f 20 03 d5                      nop
+.text:000014bc 1f 20 03 d5                      nop
+.text:000014c0 1f 20 03 d5                      nop
+.text:000014c4 1f 20 03 d5                      nop
+.text:000014c8 1f 20 03 d5                      nop
+.text:000014cc 1f 20 03 d5                      nop
+.text:000014d0 1f 20 03 d5                      nop
+.text:000014d4 1f 20 03 d5                      nop
+.text:000014d8 1f 20 03 d5                      nop
+.text:000014dc 1f 20 03 d5                      nop
+.text:000014e0 1f 20 03 d5                      nop
+.text:000014e4 1f 20 03 d5                      nop
+.text:000014e8 1f 20 03 d5                      nop
+.text:000014ec 1f 20 03 d5                      nop
+.text:000014f0 1f 20 03 d5                      nop
+.text:000014f4 1f 20 03 d5                      nop
+.text:000014f8 1f 20 03 d5                      nop
+.text:000014fc 1f 20 03 d5                      nop
+
+.text:00001500 <$d>:　　　　　　　　　　　　　　　　　// ここがスタックの１番下の部分だよ
+.text:00001500 60 1c 00 00                      .inst	0x00001c60 ; undefined
+
+.text:00001504 <exit>:
+.text:00001504 ff 43 00 d1                      sub	sp, sp, #0x10
+.text:00001508 fe 03 00 f9                      str	x30, [sp]
+.text:0000150c c0 ff ff 97                      bl	0x0000140c <__exit>
+
+.text:00001510 <write1>:
+.text:00001510 ff 83 00 d1                      sub	sp, sp, #0x20
+.text:00001514 fe 03 00 f9                      str	x30, [sp]
+.text:00001518 e2 83 00 91                      add	x2, sp, #0x20
+.text:0000151c 41 fc 1f 38                      strb	w1, [x2,#-1]!
+.text:00001520 e1 03 02 aa                      mov	x1, x2
+.text:00001524 22 00 80 52                      mov	w2, #0x1                   	// #1
+.text:00001528 be ff ff 97                      bl	0x00001420 <__write>
+.text:0000152c fe 03 40 f9                      ldr	x30, [sp]
+.text:00001530 ff 83 00 91                      add	sp, sp, #0x20
+.text:00001534 c0 03 5f d6                      ret
+
+.text:00001538 <putchar>:
+.text:00001538 ff 43 00 d1                      sub	sp, sp, #0x10
+.text:0000153c f3 7b 00 a9                      stp	x19, x30, [sp]
+.text:00001540 f3 03 01 2a                      mov	w19, w1
+.text:00001544 f3 ff ff 97                      bl	0x00001510 <write1>
+.text:00001548 e0 03 13 2a                      mov	w0, w19
+.text:0000154c f3 7b 40 a9                      ldp	x19, x30, [sp]
+.text:00001550 ff 43 00 91                      add	sp, sp, #0x10
+.text:00001554 c0 03 5f d6                      ret
+
+.text:00001558 <puts>:
+.text:00001558 ff 83 00 d1                      sub	sp, sp, #0x20
+.text:0000155c f3 53 00 a9                      stp	x19, x20, [sp]
+.text:00001560 fe 0b 00 f9                      str	x30, [sp,#16]
+.text:00001564 f4 03 00 2a                      mov	w20, w0
+.text:00001568 f3 03 01 aa                      mov	x19, x1
+.text:0000156c 21 00 40 39                      ldrb	w1, [x1]
+.text:00001570 a1 00 00 34                      cbz	w1, 0x00001584
+.text:00001574 e0 03 14 2a                      mov	w0, w20
+.text:00001578 f0 ff ff 97                      bl	0x00001538 <putchar>
+.text:0000157c 61 1e 40 38                      ldrb	w1, [x19,#1]!
+.text:00001580 a1 ff ff 35                      cbnz	w1, 0x00001574
+.text:00001584 00 00 80 52                      mov	w0, #0x0                   	// #0
+.text:00001588 f3 53 40 a9                      ldp	x19, x20, [sp]
+.text:0000158c fe 0b 40 f9                      ldr	x30, [sp,#16]
+.text:00001590 ff 83 00 91                      add	sp, sp, #0x20
+ .text:00001594 c0 03 5f d6                      ret
+
+.text:00001598 <putxval>:
+.text:00001598 ff c3 00 d1                      sub	sp, sp, #0x30
+.text:0000159c fe 03 00 f9                      str	x30, [sp]
+.text:000015a0 ff a3 00 39                      strb	wzr, [sp,#40]
+.text:000015a4 81 00 00 b5                      cbnz	x1, 0x000015b4
+.text:000015a8 5f 00 1f 6b                      cmp	w2, wzr
+.text:000015ac e3 17 9f 1a                      cset	w3, eq
+.text:000015b0 42 00 03 0b                      add	w2, w2, w3
+.text:000015b4 e4 9f 00 91                      add	x4, sp, #0x27
+.text:000015b8 06 00 00 90                      adrp	x6, 0x00001000
+.text:000015bc c6 40 1d 91                      add	x6, x6, #0x750
+.text:000015c0 06 00 00 14                      b	0x000015d8
+.text:000015c4 25 0c 40 92                      and	x5, x1, #0xf
+.text:000015c8 c5 68 65 38                      ldrb	w5, [x6,x5]
+.text:000015cc 85 f4 1f 38                      strb	w5, [x4],#-1
+.text:000015d0 21 fc 44 d3                      lsr	x1, x1, #4
+.text:000015d4 42 00 03 4b                      sub	w2, w2, w3
+.text:000015d8 5f 00 1f 6b                      cmp	w2, wzr
+.text:000015dc e3 07 9f 1a                      cset	w3, ne
+.text:000015e0 23 ff ff 35                      cbnz	w3, 0x000015c4
+.text:000015e4 01 ff ff b5                      cbnz	x1, 0x000015c4
+.text:000015e8 81 04 00 91                      add	x1, x4, #0x1
+.text:000015ec db ff ff 97                      bl	0x00001558 <puts>
+.text:000015f0 00 00 80 52                      mov	w0, #0x0                   	// #0
+.text:000015f4 fe 03 40 f9                      ldr	x30, [sp]
+.text:000015f8 ff c3 00 91                      add	sp, sp, #0x30
+.text:000015fc c0 03 5f d6                      ret
+~~~
+
 
 
 
