@@ -7,6 +7,7 @@ hereのリンクで移動すると(現在は移動できない)、画像を投�
 
 ## 問題サイトを調べてみる
 ファイルを選択するボタンと送信するボタンがあるので適当なファイルを選んで送信してみる
+()
 
 ## ソースコードを見たい
 問題サイトのhtmlを見てみると、フォームのhtmlが書かれているだけで特に変わったことは書かれていない。
@@ -68,32 +69,35 @@ if (isset($_POST["upload"])) {
     if (empty($parts[0])) {
         array_shift($parts);
     }
-
+    
+    // ①
     if (count($parts) === 0) {
         die("lol filename is empty");
     }
     
-    // アップロードしたファイルの拡張子が.phpとかだと弾かれる。
+    // ①アップロードしたファイルの拡張子が.phpとかだと弾かれる。
     if (in_array($ext, $disallowed_ext, TRUE)) {
         die("lol nice try, but im not stupid dude...");
     }
 
-    // ファイル内に"<?"の文字があると弾かれる。 
+    // ②ファイル内に"<?"の文字があると弾かれる。 
     $image = file_get_contents($tmp_name);
     if (mb_strpos($image, "<?") !== FALSE) {
         die("why would you need php in a pic.....");
     }
     
-    // 
+    // ③画像ファイル以外は弾かれる。
     if (!exif_imagetype($tmp_name)) {
         die("not an image.");
     }
-
+    
+    // ④画像サイズが1337×1337でないと弾かれる。
     $image_size = getimagesize($tmp_name);
     if ($image_size[0] !== 1337 || $image_size[1] !== 1337) {
         die("lol noob, your pic is not l33t enough");
     }
 
+    // 送信したファイルが保存される。おめでとう！！
     $name = implode(".", $parts);
     move_uploaded_file($tmp_name, $userdir . $name . "." . $ext);
 }
@@ -114,7 +118,7 @@ echo "</ul>";
 <!-- /?source -->
 ```
 if文が書かれており、条件に引っかかってしまうと`die()`でメッセージを残してプログラムが終了してしまう。
-アップロードしたファイルがサーバに保存されるためにはif文を抜けたあとに書かれている
+送信したファイルがサーバに保存されるためにはif文を抜けたあとに書かれている
 
 ```php
 move_uploaded_file($tmp_name, $userdir . $name . "." . $ext);
@@ -123,7 +127,7 @@ move_uploaded_file($tmp_name, $userdir . $name . "." . $ext);
 これが実行されなければいけない。
 
 このコードにたどり着くためにファイルが満たすべき条件をまとめる
- * ファイルには名前が必要(`.abcd`などの隠しファイルはアップロードできない)
+ * ファイルには名前が必要(`.abcd`のような名前のファイルは保存されない)
  * PHP拡張子はだめ（`.php`, `.php3`, `pht`）
  * ファイルの中に`<?`が含まれてはいけない
  * 画像のサイズが1337×1337である
@@ -136,6 +140,8 @@ move_uploaded_file($tmp_name, $userdir . $name . "." . $ext);
 3を達成するためには`.htaccess`ファイルをアップロードしてサーバの設定を書き変えると良い。ただし、2のことも同時に満たしている必要がある。
 
 ### ファイルを作成する
+
+#### まずは
 アップロードされたファイルが画像かどうか調べている関数は、`exif_imagetype()`であるので、これが何をしているのかphp公式マニュアルから調べてみる。
 
 > exif_imagetype() reads the first bytes of an image and checks its signature.
@@ -160,7 +166,8 @@ move_uploaded_file($tmp_name, $userdir . $name . "." . $ext);
 
 htaccessファイルとはapacheサーバで使われる設定ファイル。リダイレクト、アクセス制限、MIMEタイプの設定などの設定の変更、
 追加がディレクトリ単位で出来る。
-ここでは`MIMEタイプ`設定で`.wani`拡張子(何でも良い)をphpファイルだと認識させる。そのため、htaccessファイルにに次の一行を加える。
+ここでは`MIMEタイプ`設定で`.wani`拡張子(何でも良い)をphpファイルだと認識させる。
+そのため、htaccessファイルにに次の一行を加える。
 
 [htaccessについて](https://xn--web-oi9du9bc8tgu2a.com/how-to-use-php-in-html-files/)
 
@@ -168,8 +175,7 @@ htaccessファイルとはapacheサーバで使われる設定ファイル。リ
 AddType application/x-httpd-php .wani
 ```
 
-またファイルの中に`<?`の文字は使えないのであらかじめファイルの内容をbase64でエンコードしてアップロードし、
-サーバで実行されるときにデコードすることを考える。
+またファイルの中に`<?`の文字は使えない
 
 
 
