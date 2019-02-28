@@ -7,7 +7,7 @@ hereのリンクで移動すると(現在は移動できない)、画像を投�
 
 ## 問題サイトを調べてみる
 ファイルを選択するボタンと送信するボタンがあるので適当なファイルを選んで送信してみる
-![問題サイトの画像](https://github.com/takashimakazuki/study/blob/image/Screenshot%20from%202019-02-25%2012-42-45.png, "問題")
+![問題サイトの画像](https://github.com/takashimakazuki/study/blob/image/image_1.png "問題")
 
 ## ソースコードを見たい
 問題サイトのhtmlを見てみると、フォームのhtmlが書かれているだけで特に変わったことは書かれていない。
