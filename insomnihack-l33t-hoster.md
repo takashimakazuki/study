@@ -1,7 +1,7 @@
 # l33t-hoster [web]
 
 ## 問題の概要
-* 問題文 You can host your l33t pictures [here](http://35.246.234.136/) 
+* 問題文 You can host your l33t pictures [here](http://35.246.234.136/)
 
 hereのリンクで移動すると(現在は移動できない)、画像を投稿が出来るサイトへ行くことになる。
 
@@ -69,28 +69,28 @@ if (isset($_POST["upload"])) {
     if (empty($parts[0])) {
         array_shift($parts);
     }
-    
+
     // ①ファイルの名前がないと弾かれる。
     if (count($parts) === 0) {
         die("lol filename is empty");
     }
-    
+
     // ②送信したファイルの拡張子が.phpとかだと弾かれる。
     if (in_array($ext, $disallowed_ext, TRUE)) {
         die("lol nice try, but im not stupid dude...");
     }
 
-    // ③ファイル内に"<?"の文字があると弾かれる。 
+    // ③ファイル内に"<?"の文字があると弾かれる。
     $image = file_get_contents($tmp_name);
     if (mb_strpos($image, "<?") !== FALSE) {
         die("why would you need php in a pic.....");
     }
-    
+
     // ④画像ファイル以外は弾かれる。
     if (!exif_imagetype($tmp_name)) {
         die("not an image.");
     }
-    
+
     // ⑤画像サイズが1337×1337でないと弾かれる。
     $image_size = getimagesize($tmp_name);
     if ($image_size[0] !== 1337 || $image_size[1] !== 1337) {
@@ -133,14 +133,14 @@ move_uploaded_file($tmp_name, $userdir . $name . "." . $ext);
  4. 画像ファイルである
  5. 画像のサイズが1337×1337である
 
-### 目標
+## 目標
  * おそらくサーバの中のどこかにflagが隠されているので、サーバでphpのスクリプトを実行して内部のディレクトリをのぞく。
- * if文をすべて通過し、保存されるようなファイルを作る。
+ * if文をすべて通過し、サーバ内に保存されるようなファイルを作る。
  * php拡張子を用いずにphpを実行できるようにする。
 
-達成するためには`.htaccess`ファイルをアップロードしてサーバの設定を書き変えると良い。ただし、2のことも同時に満たしている必要がある。
+`.htaccess`ファイルを送信してサーバの設定を書き変えることで、上のことを実現する。
 
-### ファイルを作成する
+## ファイルを作成する
 
 #### ①.htaccessという名前ではファイルが保存されない
 
@@ -166,25 +166,41 @@ move_uploaded_file($tmp_name, $userdir . $name . "." . $ext);
 というバイトから始めていれば、phpにはwbmpファイルだと判断され、サーバ内で設定ファイルとして働くときにはエラーを起こさずに動いてくれる！
 
 なるほど、多分`8a39`という16進数が画像の幅と高さを表してるんやな、とwriteupを読みながら思っていたがよくよく考えてみると16進数の8a39は
-明らかに10進数の1337より大きいやん！という点に気づいてしまった。writeupの説明にはなかったので謎の8a39という数字について調べてみた。
+明らかに10進数の1337より大きいやん！という点に気づいてしまった。参考にしたwriteupの説明にはなかったので謎の8a39という数字について調べてみた。
 
-###
+#### 8a39は何者
 
 
-次に`.htaccess`の中にどのような設定を書くかについて考える。
+
+
+
+#### ③.php拡張子はつけずにphpファイルとして実行させる
 
 htaccessファイルとはapacheサーバで使われる設定ファイル。リダイレクト、アクセス制限、MIMEタイプの設定などの設定の変更、
 追加がディレクトリ単位で出来る。
+
+[htaccessについて](https://xn--web-oi9du9bc8tgu2a.com/how-to-use-php-in-html-files/)
+
 ここでは`MIMEタイプ`設定で`.wani`拡張子(何でも良い)をphpファイルだと認識させる。
 そのため、htaccessファイルにに次の一行を加える。
 
-[htaccessについて](https://xn--web-oi9du9bc8tgu2a.com/how-to-use-php-in-html-files/)
 
 ```
 AddType application/x-httpd-php .wani
 ```
 
-またファイルの中に`<?`の文字は使えない
+これで`.wani`ファイルはphpとして実行される。
+
+#### ④ <? を書かずにphpを実行させる
+
+とりあえずサーバに保存された.waniファイルをphpとして
+phpを書く際には必ず`<?php  ?>`で囲まれた中にコードを書かなければいけないが、この問題では`<?`の文字が入った
+ファイルはサーバ内に保存してもらえない。
+
+これを回避するためにphpのスクリプトをbase64などでエンコードしてしまう。
+
+
+
 
 
 
